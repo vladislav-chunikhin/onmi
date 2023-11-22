@@ -37,6 +37,7 @@ jobs:
           fail_ci_if_error: true
           flags: onmi
 
+  # Linter #############################################################################
   linter:
     name: Linter
     runs-on: ubuntu-latest

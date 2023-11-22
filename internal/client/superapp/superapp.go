@@ -75,7 +75,7 @@ func (c *Client) Start(ctx context.Context) {
 
 			err := c.processBatch(ctx, batch)
 			if err != nil && errors.Is(err, superapp.ErrBlocked) {
-				c.setLimits()
+				c.setLimits() // if an error is a blocked error, then we will try to update the limits
 				ticker.Stop()
 				ticker = time.NewTicker(c.p)
 			}
