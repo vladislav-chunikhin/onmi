@@ -1,5 +1,5 @@
 ---
-name: 'Onmi: Test'
+name: 'Onmi: Unit tests and Linter'
 
 on:
   push:
@@ -36,5 +36,25 @@ jobs:
           verbose: true
           fail_ci_if_error: true
           flags: onmi
+
+  linter:
+    name: Linter
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Set up Go
+        uses: actions/setup-go@v4.1.0
+        with:
+          go-version: '1.21'
+
+      - name: Checkout git repo
+        uses: actions/checkout@v4.1.1
+
+      - name: Install lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.54.2
+
+      - name: Run lint
+        run: ./bin/golangci-lint run --out-format=tab  ./...
 
 
