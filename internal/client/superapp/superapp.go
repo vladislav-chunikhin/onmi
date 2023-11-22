@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"time"
 
 	"onmi/internal/config"
@@ -31,7 +32,7 @@ type Client struct {
 	n                   uint64        // a certain number of elements that can be processed
 	p                   time.Duration // the specified time interval from external service
 	batchCh             chan superapp.Batch
-	newTickerIntervalCh chan struct{}
+	newTickerIntervalCh chan struct{} // signal channel to notify us when the limit should be updated
 	logger              logger.Logger
 }
 
@@ -53,7 +54,7 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 		cfg:                 cfg,
 		logger:              logger,
 		batchCh:             make(chan superapp.Batch),
-		newTickerIntervalCh: make(chan struct{}),
+		newTickerIntervalCh: make(chan struct{}, 1),
 	}
 	client.setLimits()
 
@@ -64,6 +65,8 @@ func (c *Client) Start(ctx context.Context) {
 	ticker := time.NewTicker(c.p)
 	defer ticker.Stop()
 
+	workerPool := NewWorkerPool(runtime.NumCPU())
+
 	go func() {
 		for {
 			select {
@@ -71,13 +74,15 @@ func (c *Client) Start(ctx context.Context) {
 				return
 			case <-ticker.C:
 				if batch := c.dequeueBatch(); len(batch) > 0 {
-					go func() {
+					/*	creating a new goroutine at every timer tick can result in a large number of goroutines
+						and resource consumption if the ticks occur too frequently, so we used a worker pool */
+					workerPool.Execute(func() {
 						err := c.processBatch(ctx, batch)
 						if err != nil && errors.Is(err, superapp.ErrBlocked) {
 							c.setLimits()
 							c.newTickerIntervalCh <- struct{}{}
 						}
-					}()
+					})
 				}
 			case <-c.newTickerIntervalCh:
 				ticker.Stop()

@@ -107,6 +107,7 @@ func TestNewClient(t *testing.T) {
 			if client.cfg != tt.want.cfg ||
 				client.transport != tt.want.transport ||
 				client.batchCh == nil ||
+				client.newTickerIntervalCh == nil ||
 				client.logger != tt.want.logger ||
 				client.p != tt.want.p ||
 				client.n != tt.want.n {
