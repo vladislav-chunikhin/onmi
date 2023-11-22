@@ -9,4 +9,6 @@ var ErrBlocked = errors.New("blocked")
 type Batch []Item
 
 // Item is some abstract item.
-type Item struct{}
+type Item struct {
+	ID string
+}

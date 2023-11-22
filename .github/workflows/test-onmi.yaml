@@ -1,5 +1,5 @@
 ---
-name: 'Onmi: Build, Test and Push'
+name: 'Onmi: Test'
 
 on:
   push:
@@ -8,9 +8,6 @@ on:
   pull_request:
     branches:
       - 'main'
-  schedule:
-    # re-run monthly to keep image fresh with upstream base images
-    - cron: '0 12 15 * *'
 
 jobs:
   # Unit tests #######################################################################

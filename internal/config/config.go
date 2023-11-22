@@ -2,8 +2,6 @@ package config
 
 import (
 	"time"
-
-	"onmi/pkg/circuitbreaker"
 )
 
 type Config struct {
@@ -15,8 +13,8 @@ type ClientsConfig struct {
 }
 
 type ClientConfig struct {
-	Host           string                `yaml:"host"`
-	Port           string                `yaml:"port"`
-	Timeout        time.Duration         `yaml:"timeout"`
-	CircuitBreaker circuitbreaker.Config `yaml:"circuitBreaker"`
+	Host    string        `yaml:"host"`
+	Port    string        `yaml:"port"`
+	Timeout time.Duration `yaml:"timeout"`
+	Delta   time.Duration `yaml:"delta"`
 }
