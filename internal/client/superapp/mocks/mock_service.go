@@ -24,3 +24,19 @@ func (sa *SuperApp) Process(_ context.Context, _ superapp.Batch) error {
 	fmt.Println("processed the batch")
 	return nil
 }
+
+type SuperAppWithBlockError struct {
+}
+
+func NewSuperAppWithBlockError() *SuperAppWithBlockError {
+	return &SuperAppWithBlockError{}
+}
+
+func (sa *SuperAppWithBlockError) GetLimits() (n uint64, p time.Duration) {
+	return 10, 2 * time.Second
+}
+
+func (sa *SuperAppWithBlockError) Process(_ context.Context, _ superapp.Batch) error {
+	<-time.After(100 * time.Millisecond) // some work
+	return superapp.ErrBlocked
+}

@@ -1,6 +1,7 @@
 package superapp
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -116,39 +117,74 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-//func TestClient_Start_OK(t *testing.T) {
-//	cfg := &config.ClientConfig{
-//		Host:    "localhost",
-//		Port:    "80",
-//		Timeout: 5 * time.Second,
-//	}
-//	transport := mocks.NewTransport(t)
-//	transport.EXPECT().
-//		GetLimits().
-//		Return(10, 10*time.Second).
-//		Once()
-//
-//	ctx := context.TODO()
-//	transport.EXPECT().
-//		Process(mock.Anything, mock.Anything).
-//		Return(nil).
-//		Times(2)
-//
-//	log := mocks.NewMockLogger()
-//
-//	client, err := NewClient(cfg, log, transport)
-//	require.Nil(t, err)
-//
-//	batches := getBatches(30, 10)
-//
-//	go func() {
-//		for _, batch := range batches {
-//			client.Enqueue(batch)
-//		}
-//	}()
-//
-//	client.Start(ctx)
-//}
+func TestClient_Start_OK(t *testing.T) {
+	ctx := context.TODO()
+	cfg := &config.ClientConfig{
+		Host:    "localhost",
+		Port:    "80",
+		Timeout: 5 * time.Second,
+	}
+	superApp := mocks.NewSuperApp()
+	customLog, err := logger.New(logger.DebugLevel)
+	require.NoError(t, err)
+
+	client, err := NewClient(cfg, customLog, superApp)
+	client.batchCh = make(chan superapp.Batch, 3)
+	require.Nil(t, err)
+
+	batches := getBatches(3, 3)
+
+	for _, batch := range batches {
+		client.Enqueue(batch)
+	}
+	client.Close()
+
+	client.Start(ctx)
+}
+
+func TestClient_Start_BlockError(t *testing.T) {
+	ctx := context.TODO()
+	cfg := &config.ClientConfig{
+		Host:    "localhost",
+		Port:    "80",
+		Timeout: 5 * time.Second,
+	}
+	superApp := mocks.NewSuperAppWithBlockError()
+	customLog, err := logger.New(logger.DebugLevel)
+	require.NoError(t, err)
+
+	client, err := NewClient(cfg, customLog, superApp)
+	client.batchCh = make(chan superapp.Batch, 3)
+	require.Nil(t, err)
+
+	batches := getBatches(3, 3)
+
+	for _, batch := range batches {
+		client.Enqueue(batch)
+	}
+	client.Close()
+
+	client.Start(ctx)
+}
+
+func TestClient_processBatch_Nil_Batch(t *testing.T) {
+	ctx := context.TODO()
+	cfg := &config.ClientConfig{
+		Host:    "localhost",
+		Port:    "80",
+		Timeout: 5 * time.Second,
+	}
+	superApp := mocks.NewSuperApp()
+	customLog, err := logger.New(logger.DebugLevel)
+	require.NoError(t, err)
+
+	client, err := NewClient(cfg, customLog, superApp)
+	require.Nil(t, err)
+
+	err = client.processBatch(ctx, nil)
+	require.Error(t, err)
+	require.ErrorIs(t, err, errNilBatch)
+}
 
 func getBatches(amountOfBatches, amountOfItems int) []superapp.Batch {
 	batches := make([]superapp.Batch, 0, amountOfBatches)

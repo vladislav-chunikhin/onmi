@@ -7,7 +7,7 @@
 - [Makefile to run unit-tests and linter](Makefile)
     - ``make test-unit``
     - ``make lint-go``
-- [GitHub Workflow](.github/workflows/test-onmi.yaml)
+- [GitHub Workflow](.github/workflows/test-linter-onmi.yaml)
 
 ### Improvements
 

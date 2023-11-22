@@ -104,6 +104,10 @@ func (c *Client) dequeueBatch() *superapp.Batch {
 	for len(batch) < int(c.n) {
 		select {
 		case itemBatch, ok := <-c.batchCh:
+			if !ok && len(batch) != 0 {
+				return &batch
+			}
+
 			if !ok {
 				fmt.Println("processing completed...")
 				return nil
