@@ -2,6 +2,7 @@ package superapp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,12 +26,13 @@ type Transport interface {
 }
 
 type Client struct {
-	transport Transport
-	cfg       *config.ClientConfig
-	n         uint64        // a certain number of elements that can be processed
-	p         time.Duration // the specified time interval from external service
-	batchCh   chan superapp.Batch
-	logger    logger.Logger
+	transport           Transport
+	cfg                 *config.ClientConfig
+	n                   uint64        // a certain number of elements that can be processed
+	p                   time.Duration // the specified time interval from external service
+	batchCh             chan superapp.Batch
+	newTickerIntervalCh chan struct{}
+	logger              logger.Logger
 }
 
 func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transport) (*Client, error) {
@@ -47,10 +49,11 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 	}
 
 	client := &Client{
-		transport: transport,
-		cfg:       cfg,
-		logger:    logger,
-		batchCh:   make(chan superapp.Batch),
+		transport:           transport,
+		cfg:                 cfg,
+		logger:              logger,
+		batchCh:             make(chan superapp.Batch),
+		newTickerIntervalCh: make(chan struct{}),
 	}
 	client.setLimits()
 
@@ -68,8 +71,17 @@ func (c *Client) Start(ctx context.Context) {
 				return
 			case <-ticker.C:
 				if batch := c.dequeueBatch(); len(batch) > 0 {
-					go c.processBatch(ctx, batch)
+					go func() {
+						err := c.processBatch(ctx, batch)
+						if err != nil && errors.Is(err, superapp.ErrBlocked) {
+							c.setLimits()
+							c.newTickerIntervalCh <- struct{}{}
+						}
+					}()
 				}
+			case <-c.newTickerIntervalCh:
+				ticker.Stop()
+				ticker = time.NewTicker(c.p)
 			}
 		}
 	}()
@@ -82,7 +94,7 @@ func (c *Client) Close() {
 func (c *Client) setLimits() {
 	n, p := c.transport.GetLimits()
 	c.n = n
-	c.p = p
+	c.p = p + c.cfg.Timeout // added time to account for network delays
 }
 
 func (c *Client) Enqueue(ub superapp.Batch) {
@@ -107,7 +119,7 @@ func (c *Client) dequeueBatch() superapp.Batch {
 func (c *Client) processBatch(ctx context.Context, batch superapp.Batch) error {
 	if err := c.transport.Process(ctx, batch); err != nil {
 		c.logger.Errorf("failed to process the batch: %v", err)
-		return err
+		return fmt.Errorf("failed to process the batch: %w", err)
 	}
 
 	return nil
