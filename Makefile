@@ -1,3 +1,5 @@
+PROJECT_ROOT=$(shell pwd)
+
 .PHONY: help
 all: help
 help: Makefile
@@ -16,3 +18,11 @@ test-unit: ## Run unit tests
 coverage: ## Show coverage
 	@go tool cover -html=cover.out
 
+.PHONY: lint-go
+lint-go: ## Run linter of golang source
+	@echo 'linter run'
+	docker run --rm -it \
+		-v $(GOPATH)/pkg/mod:/go/pkg/mod \
+		-v $(PROJECT_ROOT):/app \
+		-w /app \
+		golangci/golangci-lint:v1.54.2 golangci-lint run -v

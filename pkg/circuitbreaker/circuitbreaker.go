@@ -52,10 +52,7 @@ func NewProxy(
 			})
 		},
 		IsSuccessful: func(err error) bool {
-			if err == nil {
-				return true
-			}
-			return false
+			return err == nil
 		},
 	}
 	return &Proxy{
