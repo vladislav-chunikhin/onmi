@@ -32,7 +32,7 @@ type Client struct {
 	n                   uint64        // a certain number of elements that can be processed
 	p                   time.Duration // the specified time interval from external service
 	batchCh             chan superapp.Batch
-	newTickerIntervalCh chan struct{} // signal channel to notify us when the limit should be updated
+	newTickerIntervalCh chan struct{} // signal channel to notify us when the limits should be updated
 	logger              logger.Logger
 }
 
@@ -93,6 +93,7 @@ func (c *Client) Start(ctx context.Context) {
 }
 
 func (c *Client) Close() {
+	close(c.newTickerIntervalCh)
 	close(c.batchCh)
 }
 
@@ -122,7 +123,13 @@ func (c *Client) dequeueBatch() superapp.Batch {
 }
 
 func (c *Client) processBatch(ctx context.Context, batch superapp.Batch) error {
-	if err := c.transport.Process(ctx, batch); err != nil {
+	requestCtx, cancel := context.WithTimeout(ctx, c.cfg.Timeout)
+	defer func() {
+		if requestCtx.Err() == nil {
+			cancel()
+		}
+	}()
+	if err := c.transport.Process(requestCtx, batch); err != nil {
 		c.logger.Errorf("failed to process the batch: %v", err)
 		return fmt.Errorf("failed to process the batch: %w", err)
 	}
