@@ -117,7 +117,7 @@ func (s *TestSuperAppClientSuite) TestNewClient() {
 			}
 			client, err := NewClient(tt.args.cfg, tt.args.logger, tt.args.transport, 5)
 			if s.Assert().ErrorIs(err, tt.expectedErr) {
-				ExpectError(&s.Suite, tt.expectedErr, err)
+				expectError(&s.Suite, tt.expectedErr, err)
 				return
 			}
 
@@ -220,7 +220,7 @@ func getBatches(amountOfBatches, amountOfItems int) []superapp.Batch {
 	return batches
 }
 
-func ExpectError(s *suite.Suite, expected error, actual error) {
+func expectError(s *suite.Suite, expected error, actual error) {
 	if expected == nil && actual == nil {
 		return
 	}
