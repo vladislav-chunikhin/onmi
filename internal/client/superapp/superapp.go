@@ -73,6 +73,8 @@ func (c *Client) Start(ctx context.Context) {
 				return
 			}
 
+			/*	There is an assumption that the batch processing time can be longer than the ticker period.
+				Thus, it makes sense to improve this code section, for example, by running the processing as a separate goroutine*/
 			err := c.processBatch(ctx, batch)
 			if err != nil && errors.Is(err, superapp.ErrBlocked) {
 				c.setLimits() // if an error is a blocked error, then we will try to update the limits
