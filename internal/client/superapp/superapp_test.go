@@ -17,7 +17,7 @@ func TestNewClient_NilTransport(t *testing.T) {
 	client, err := NewClient(&config.ClientConfig{
 		Host: "localhost",
 		Port: "80",
-	}, mocks.NewMockLogger(), nil)
+	}, mocks.NewMockLogger(), nil, 5)
 
 	require.Nil(t, client)
 	require.Error(t, err)
@@ -94,7 +94,7 @@ func TestNewClient(t *testing.T) {
 			if tt.args.transport != nil {
 				tt.args.transport(transport)
 			}
-			client, err := NewClient(tt.args.cfg, tt.args.logger, transport)
+			client, err := NewClient(tt.args.cfg, tt.args.logger, transport, 5)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -128,8 +128,7 @@ func TestClient_Start_OK(t *testing.T) {
 	customLog, err := logger.New(logger.DebugLevel)
 	require.NoError(t, err)
 
-	client, err := NewClient(cfg, customLog, superApp)
-	client.batchCh = make(chan superapp.Batch, 3)
+	client, err := NewClient(cfg, customLog, superApp, 3)
 	require.Nil(t, err)
 
 	batches := getBatches(3, 3)
@@ -153,8 +152,7 @@ func TestClient_Start_BlockError(t *testing.T) {
 	customLog, err := logger.New(logger.DebugLevel)
 	require.NoError(t, err)
 
-	client, err := NewClient(cfg, customLog, superApp)
-	client.batchCh = make(chan superapp.Batch, 3)
+	client, err := NewClient(cfg, customLog, superApp, 3)
 	require.Nil(t, err)
 
 	batches := getBatches(3, 3)
@@ -178,7 +176,7 @@ func TestClient_processBatch_Nil_Batch(t *testing.T) {
 	customLog, err := logger.New(logger.DebugLevel)
 	require.NoError(t, err)
 
-	client, err := NewClient(cfg, customLog, superApp)
+	client, err := NewClient(cfg, customLog, superApp, 5)
 	require.Nil(t, err)
 
 	err = client.processBatch(ctx, nil)

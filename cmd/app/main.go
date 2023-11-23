@@ -15,6 +15,11 @@ import (
 	"onmi/pkg/logger"
 )
 
+const (
+	amountOfBatches = 3
+	amountOfItems   = 10
+)
+
 func main() {
 	superApp := mocks.NewSuperApp()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -35,19 +40,17 @@ func main() {
 		log.Fatalf("init log: %v", err)
 	}
 
-	client, err := superapp.NewClient(&cfg.ClientsConfig.SupperApp, customLog, superApp)
+	batches := getBatches(amountOfBatches, amountOfItems)
+
+	client, err := superapp.NewClient(&cfg.ClientsConfig.SupperApp, customLog, superApp, amountOfBatches)
 	if err != nil {
 		log.Fatalf("init client: %v", err)
 	}
 
-	batches := getBatches(3, 10)
-
-	go func() {
-		for _, batch := range batches {
-			client.Enqueue(batch)
-		}
-		client.Close()
-	}()
+	for _, batch := range batches {
+		client.Enqueue(batch)
+	}
+	client.Close()
 
 	go client.Start(ctx)
 

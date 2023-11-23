@@ -35,7 +35,7 @@ type Client struct {
 	logger    logger.Logger
 }
 
-func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transport) (*Client, error) {
+func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transport, amountOfBatches int) (*Client, error) {
 	if cfg == nil {
 		return nil, errNilConfig
 	}
@@ -52,7 +52,7 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 		transport: transport,
 		cfg:       cfg,
 		logger:    logger,
-		batchCh:   make(chan superapp.Batch),
+		batchCh:   make(chan superapp.Batch, amountOfBatches),
 	}
 	client.setLimits()
 
