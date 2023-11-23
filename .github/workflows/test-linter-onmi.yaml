@@ -9,6 +9,9 @@ on:
     branches:
       - 'main'
 
+permissions:
+  contents: read
+
 jobs:
   # Unit tests #######################################################################
   unit-test:
@@ -52,10 +55,9 @@ jobs:
       - name: Checkout git repo
         uses: actions/checkout@v4.1.1
 
-      - name: Install lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.50.0
-
-      - name: Run lint
-        run: ./bin/golangci-lint run --out-format=tab  ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54.2
 
 
