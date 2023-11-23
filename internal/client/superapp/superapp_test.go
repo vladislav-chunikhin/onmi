@@ -151,13 +151,16 @@ func (s *TestSuperAppClientSuite) TestClient_Start_OK() {
 
 	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
 	s.NoError(err)
+	defer func() {
+		client.CloseBatchCh()
+		client.Close()
+	}()
 
 	batches := getBatches(amountOfBatches, amountOfItems)
 
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.CloseBatchCh()
 
 	client.Start(ctx)
 }
@@ -178,13 +181,16 @@ func (s *TestSuperAppClientSuite) TestClient_Start_BlockError() {
 
 	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
 	s.NoError(err)
+	defer func() {
+		client.CloseBatchCh()
+		client.Close()
+	}()
 
 	batches := getBatches(amountOfBatches, amountOfItems)
 
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.CloseBatchCh()
 
 	client.Start(ctx)
 }

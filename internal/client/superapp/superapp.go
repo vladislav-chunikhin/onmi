@@ -64,8 +64,10 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 
 func (c *Client) Start(ctx context.Context) {
 	ticker := time.NewTicker(c.p)
-	defer ticker.Stop()
-	defer c.CloseBatchCh()
+	defer func() {
+		ticker.Stop()
+		c.CloseBatchCh()
+	}()
 
 	for {
 		select {
