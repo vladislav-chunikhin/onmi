@@ -14,7 +14,7 @@ import (
 	"onmi/pkg/logger"
 )
 
-func TestTestSuperAppClient(t *testing.T) {
+func TestSuperAppClient(t *testing.T) {
 	suite.Run(t, new(TestSuperAppClientSuite))
 }
 
