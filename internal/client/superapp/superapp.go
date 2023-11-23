@@ -129,19 +129,16 @@ func (c *Client) dequeueBatch() *superapp.Batch {
 				return nil
 			}
 
-			if len(itemBatch) > maxItems {
-				batchToProcess := itemBatch[:maxItems]
-				batch = append(batch, batchToProcess...)
-				remainingBatch := itemBatch[maxItems:]
-				c.batchCh <- remainingBatch
-			} else {
-				if len(batch)+len(itemBatch) > maxItems {
-					c.batchCh <- itemBatch
-					return &batch
-				}
-				batch = append(batch, itemBatch...)
+			diff := maxItems - len(batch)
+			if len(itemBatch) > diff {
+				c.batchCh <- itemBatch[diff:]
+				itemBatch = itemBatch[:diff]
 			}
 
+			batch = append(batch, itemBatch...)
+			if len(batch) == maxItems {
+				return &batch
+			}
 		default:
 			if len(batch) != 0 {
 				return &batch
