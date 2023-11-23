@@ -17,11 +17,10 @@ import (
 
 const (
 	amountOfBatches = 3
-	amountOfItems   = 10
+	amountOfItems   = 4
 )
 
 func main() {
-	superApp := mocks.NewSuperApp()
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := &config.Config{
@@ -39,22 +38,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("init log: %v", err)
 	}
+	superApp := mocks.NewSuperApp(customLog)
 
 	batches := getBatches(amountOfBatches, amountOfItems)
 
 	client, err := superapp.NewClient(&cfg.ClientsConfig.SupperApp, customLog, superApp, amountOfBatches)
 	if err != nil {
-		log.Fatalf("init client: %v", err)
+		customLog.Fatalf("init client: %v", err)
 	}
 
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.CloseBatchCh()
 
 	go client.Start(ctx)
 
 	stop := func() {
+		customLog.Debugf("graceful shutdown starting...")
+		client.CloseBatchCh()
 		client.Close()
 		cancel()
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	"onmi/internal/config"
@@ -34,6 +35,7 @@ type Client struct {
 	p         time.Duration // the specified time interval from external service
 	batchCh   chan superapp.Batch
 	logger    logger.Logger
+	once      sync.Once
 }
 
 func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transport, amountOfBatches int) (*Client, error) {
@@ -63,14 +65,17 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 func (c *Client) Start(ctx context.Context) {
 	ticker := time.NewTicker(c.p)
 	defer ticker.Stop()
+	defer c.CloseBatchCh()
 
 	for {
 		select {
 		case <-ctx.Done():
+			c.logger.Infof("processing interrupted by done signal")
 			return
 		case <-ticker.C:
 			batch := c.dequeueBatch()
 			if batch == nil || len(*batch) == 0 {
+				c.logger.Infof("processing completed")
 				return
 			}
 
@@ -87,12 +92,15 @@ func (c *Client) Start(ctx context.Context) {
 }
 
 func (c *Client) CloseBatchCh() {
-	close(c.batchCh)
+	c.once.Do(func() {
+		close(c.batchCh)
+		c.logger.Debugf("batch channel is closed")
+	})
 }
 
 // Close closes connection to super app
 func (c *Client) Close() {
-	fmt.Println("connection to super app closed")
+	c.logger.Debugf("connection to super app closed")
 }
 
 func (c *Client) setLimits() {
@@ -107,9 +115,10 @@ func (c *Client) Enqueue(ub superapp.Batch) {
 
 func (c *Client) dequeueBatch() *superapp.Batch {
 	batch := make(superapp.Batch, 0, c.n)
+	maxItems := int(c.n)
 
 	// Extract a specific number of elements
-	for len(batch) < int(c.n) {
+	for len(batch) < maxItems {
 		select {
 		case itemBatch, ok := <-c.batchCh:
 			if !ok && len(batch) != 0 {
@@ -117,12 +126,26 @@ func (c *Client) dequeueBatch() *superapp.Batch {
 			}
 
 			if !ok {
-				fmt.Println("processing completed...")
 				return nil
 			}
 
-			batch = append(batch, itemBatch...)
+			if len(itemBatch) > maxItems {
+				batchToProcess := itemBatch[:maxItems]
+				batch = append(batch, batchToProcess...)
+				remainingBatch := itemBatch[maxItems:]
+				c.batchCh <- remainingBatch
+			} else {
+				if len(batch)+len(itemBatch) > maxItems {
+					c.batchCh <- itemBatch
+					return &batch
+				}
+				batch = append(batch, itemBatch...)
+			}
+
 		default:
+			if len(batch) != 0 {
+				return &batch
+			}
 			return nil // No available items in the channel, finish extraction
 		}
 	}
