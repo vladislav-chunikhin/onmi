@@ -87,6 +87,11 @@ func (c *Client) CloseBatchCh() {
 	close(c.batchCh)
 }
 
+// Close closes connection to super app
+func (c *Client) Close() {
+	fmt.Println("connection to super app closed")
+}
+
 func (c *Client) setLimits() {
 	n, p := c.transport.GetLimits()
 	c.n = n

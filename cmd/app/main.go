@@ -55,6 +55,7 @@ func main() {
 	go client.Start(ctx)
 
 	stop := func() {
+		client.Close()
 		cancel()
 	}
 
