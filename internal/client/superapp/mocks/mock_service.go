@@ -2,11 +2,15 @@ package mocks
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"onmi/internal/model/superapp"
 	"onmi/pkg/logger"
+)
+
+var (
+	errTooManyItems = errors.New("too many items")
 )
 
 const (
@@ -28,10 +32,10 @@ func (sa *SuperApp) GetLimits() (n uint64, p time.Duration) {
 
 func (sa *SuperApp) Process(_ context.Context, batch superapp.Batch) error {
 	if len(batch) > nValue {
-		return fmt.Errorf("too many items")
+		return errTooManyItems
 	}
 
 	<-time.After(100 * time.Millisecond) // some work
-	sa.log.Debugf("processed the batch")
+	sa.log.Debugf("processed the batch, len: %d", len(batch))
 	return nil
 }
