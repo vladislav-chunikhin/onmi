@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"onmi/internal/config"
@@ -40,11 +41,11 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 		return nil, errNilConfig
 	}
 
-	if logger == nil {
+	if logger == nil || reflect.ValueOf(logger).IsNil() {
 		return nil, errNilLogger
 	}
 
-	if transport == nil {
+	if transport == nil || reflect.ValueOf(transport).IsNil() {
 		return nil, errNilTransport
 	}
 
