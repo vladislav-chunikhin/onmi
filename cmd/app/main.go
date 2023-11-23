@@ -50,7 +50,7 @@ func main() {
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.Close()
+	client.CloseBatchCh()
 
 	go client.Start(ctx)
 

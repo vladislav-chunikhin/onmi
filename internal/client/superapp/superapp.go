@@ -83,7 +83,7 @@ func (c *Client) Start(ctx context.Context) {
 	}
 }
 
-func (c *Client) Close() {
+func (c *Client) CloseBatchCh() {
 	close(c.batchCh)
 }
 

@@ -136,7 +136,7 @@ func TestClient_Start_OK(t *testing.T) {
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.Close()
+	client.CloseBatchCh()
 
 	client.Start(ctx)
 }
@@ -160,7 +160,7 @@ func TestClient_Start_BlockError(t *testing.T) {
 	for _, batch := range batches {
 		client.Enqueue(batch)
 	}
-	client.Close()
+	client.CloseBatchCh()
 
 	client.Start(ctx)
 }
