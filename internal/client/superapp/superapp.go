@@ -31,7 +31,7 @@ type Transport interface {
 type Client struct {
 	transport Transport
 	cfg       *config.ClientConfig
-	n         uint64        // a certain number of elements that can be processed
+	n         int           // a certain number of elements that can be processed
 	p         time.Duration // the specified time interval from external service
 	batchCh   chan superapp.Batch
 	logger    logger.Logger
@@ -107,7 +107,7 @@ func (c *Client) Close() {
 
 func (c *Client) setLimits() {
 	n, p := c.transport.GetLimits()
-	c.n = n
+	c.n = int(n)
 	c.p = p + c.cfg.Delta // added time to account for network delays
 }
 
@@ -117,10 +117,9 @@ func (c *Client) Enqueue(ub superapp.Batch) {
 
 func (c *Client) dequeueBatch() *superapp.Batch {
 	batch := make(superapp.Batch, 0, c.n)
-	maxItems := int(c.n)
 
 	// Extract a specific number of elements
-	for len(batch) < maxItems {
+	for len(batch) < c.n {
 		select {
 		case itemBatch, ok := <-c.batchCh:
 			if !ok && len(batch) != 0 {
@@ -131,14 +130,14 @@ func (c *Client) dequeueBatch() *superapp.Batch {
 				return nil
 			}
 
-			diff := maxItems - len(batch)
+			diff := c.n - len(batch)
 			if len(itemBatch) > diff {
 				c.batchCh <- itemBatch[diff:]
 				itemBatch = itemBatch[:diff]
 			}
 
 			batch = append(batch, itemBatch...)
-			if len(batch) == maxItems {
+			if len(batch) == c.n {
 				return &batch
 			}
 		default:

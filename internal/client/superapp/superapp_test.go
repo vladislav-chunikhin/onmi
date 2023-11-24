@@ -136,33 +136,101 @@ func (s *TestSuperAppClientSuite) TestNewClient() {
 
 func (s *TestSuperAppClientSuite) TestClient_Start_OK() {
 	ctx := context.TODO()
-	amountOfBatches := 5
-	amountOfItems := 3
 
-	s.transport.EXPECT().
-		GetLimits().
-		Return(10, 2*time.Second).
-		Once()
+	testCases := []struct {
+		name            string
+		amountOfBatches int
+		amountOfItems   int
+		applyMocks      func()
+	}{
+		{
+			name:            "batches:5,items:3,n:10,p:2s",
+			amountOfBatches: 5,
+			amountOfItems:   3,
+			applyMocks: func() {
+				s.transport.EXPECT().
+					GetLimits().
+					Return(10, 2*time.Second).
+					Once()
 
-	s.transport.EXPECT().
-		Process(mock.Anything, mock.Anything).
-		Return(nil).
-		Times(2)
+				s.transport.EXPECT().
+					Process(mock.Anything, mock.Anything).
+					Return(nil).
+					Times(2)
+			},
+		},
+		{
+			name:            "batches:1,items:1,n:10,p:2s",
+			amountOfBatches: 1,
+			amountOfItems:   1,
+			applyMocks: func() {
+				s.transport.EXPECT().
+					GetLimits().
+					Return(10, 2*time.Second).
+					Once()
 
-	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
-	s.NoError(err)
-	defer func() {
-		client.CloseBatchCh()
-		client.Close()
-	}()
+				s.transport.EXPECT().
+					Process(mock.Anything, mock.Anything).
+					Return(nil).
+					Times(1)
+			},
+		},
+		{
+			name:            "batches:2,items:1,n:1,p:1s",
+			amountOfBatches: 2,
+			amountOfItems:   1,
+			applyMocks: func() {
+				s.transport.EXPECT().
+					GetLimits().
+					Return(1, 1*time.Second).
+					Once()
 
-	batches := getBatches(amountOfBatches, amountOfItems)
+				s.transport.EXPECT().
+					Process(mock.Anything, mock.Anything).
+					Return(nil).
+					Times(2)
+			},
+		},
+		{
+			name:            "batches:1,items:2,n:1,p:1s",
+			amountOfBatches: 1,
+			amountOfItems:   2,
+			applyMocks: func() {
+				s.transport.EXPECT().
+					GetLimits().
+					Return(1, 1*time.Second).
+					Once()
 
-	for _, batch := range batches {
-		client.Enqueue(batch)
+				s.transport.EXPECT().
+					Process(mock.Anything, mock.Anything).
+					Return(nil).
+					Times(2)
+			},
+		},
 	}
 
-	client.Start(ctx)
+	for _, tt := range testCases {
+		s.Run(tt.name, func() {
+			if tt.applyMocks != nil {
+				tt.applyMocks()
+			}
+
+			client, err := NewClient(s.cfg, s.logger, s.transport, tt.amountOfBatches)
+			s.NoError(err)
+			defer func() {
+				client.CloseBatchCh()
+				client.Close()
+			}()
+
+			batches := getBatches(tt.amountOfBatches, tt.amountOfItems)
+			for _, batch := range batches {
+				client.Enqueue(batch)
+			}
+
+			client.Start(ctx)
+		})
+	}
+
 }
 
 func (s *TestSuperAppClientSuite) TestClient_Start_BlockError() {
