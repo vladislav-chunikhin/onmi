@@ -60,7 +60,7 @@ func loadFromFile(
 	configPath string,
 ) (bool, error) {
 	if err := fileExists(configPath); err != nil {
-		return false, nil
+		return false, err
 	}
 
 	if err := checkFileExt(configPath); err != nil {
