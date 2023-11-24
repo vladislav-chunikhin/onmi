@@ -240,12 +240,42 @@ func (s *TestSuperAppClientSuite) TestClient_Start_BlockError() {
 
 	s.transport.EXPECT().
 		GetLimits().
-		Return(10, 2*time.Second).
+		Return(10, 1*time.Second).
 		Times(2)
 
 	s.transport.EXPECT().
 		Process(mock.Anything, mock.Anything).
 		Return(superapp.ErrBlocked)
+
+	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
+	s.NoError(err)
+	defer func() {
+		client.CloseBatchCh()
+		client.Close()
+	}()
+
+	batches := getBatches(amountOfBatches, amountOfItems)
+
+	for _, batch := range batches {
+		client.Enqueue(batch)
+	}
+
+	client.Start(ctx)
+}
+
+func (s *TestSuperAppClientSuite) TestClient_Start_Panic() {
+	ctx := context.TODO()
+	amountOfBatches := 3
+	amountOfItems := 3
+
+	s.transport.EXPECT().
+		GetLimits().
+		Return(10, 1*time.Second).
+		Once()
+
+	s.transport.EXPECT().
+		Process(mock.Anything, mock.Anything).
+		Panic("something went wrong")
 
 	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
 	s.NoError(err)
@@ -292,6 +322,38 @@ func getBatches(amountOfBatches, amountOfItems int) []superapp.Batch {
 	}
 
 	return batches
+}
+
+func (s *TestSuperAppClientSuite) TestClient_Start_DoneSignal() {
+	ctx, cancel := context.WithCancel(context.TODO())
+	amountOfBatches := 3
+	amountOfItems := 3
+
+	s.transport.EXPECT().
+		GetLimits().
+		Return(10, 2*time.Second).
+		Once()
+
+	s.transport.EXPECT().
+		Process(mock.Anything, mock.Anything).
+		Return(nil).
+		Times(0)
+
+	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
+	s.NoError(err)
+	defer func() {
+		client.CloseBatchCh()
+		client.Close()
+	}()
+
+	batches := getBatches(amountOfBatches, amountOfItems)
+
+	for _, batch := range batches {
+		client.Enqueue(batch)
+	}
+
+	cancel()
+	client.Start(ctx)
 }
 
 func expectError(s *suite.Suite, expected error, actual error) {
