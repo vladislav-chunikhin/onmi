@@ -69,10 +69,10 @@ output:
 issues:
   exclude-rules:
     - linters:
-      - gosec
+        - gosec
       text: "weak cryptographic primitive"
     - linters:
-      - staticcheck
+        - staticcheck
       text: "SA1019:.*Mode is deprecated: used for a transitional period"
 
 # all available settings of specific linters
