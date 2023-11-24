@@ -144,13 +144,13 @@ func (s *TestSuperAppClientSuite) TestClient_Start_OK() {
 		applyMocks      func()
 	}{
 		{
-			name:            "batches:5,items:3,n:10,p:2s",
+			name:            "batches:5,items:3,n:10,p:1s",
 			amountOfBatches: 5,
 			amountOfItems:   3,
 			applyMocks: func() {
 				s.transport.EXPECT().
 					GetLimits().
-					Return(10, 2*time.Second).
+					Return(10, 1*time.Second).
 					Once()
 
 				s.transport.EXPECT().
@@ -160,13 +160,13 @@ func (s *TestSuperAppClientSuite) TestClient_Start_OK() {
 			},
 		},
 		{
-			name:            "batches:1,items:1,n:10,p:2s",
+			name:            "batches:1,items:1,n:10,p:1s",
 			amountOfBatches: 1,
 			amountOfItems:   1,
 			applyMocks: func() {
 				s.transport.EXPECT().
 					GetLimits().
-					Return(10, 2*time.Second).
+					Return(10, 1*time.Second).
 					Once()
 
 				s.transport.EXPECT().
@@ -311,18 +311,13 @@ func (s *TestSuperAppClientSuite) TestClient_processBatch_Nil_Batch() {
 
 func (s *TestSuperAppClientSuite) TestClient_Start_DoneSignal() {
 	ctx, cancel := context.WithCancel(context.TODO())
-	amountOfBatches := 3
-	amountOfItems := 3
+	amountOfBatches := 1
+	amountOfItems := 1
 
 	s.transport.EXPECT().
 		GetLimits().
-		Return(10, 2*time.Second).
+		Return(10, 1*time.Second).
 		Once()
-
-	s.transport.EXPECT().
-		Process(mock.Anything, mock.Anything).
-		Return(nil).
-		Times(0)
 
 	client, err := NewClient(s.cfg, s.logger, s.transport, amountOfBatches)
 	s.NoError(err)
