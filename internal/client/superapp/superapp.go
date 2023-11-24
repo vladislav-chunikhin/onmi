@@ -76,12 +76,12 @@ func (c *Client) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			c.logger.Infof("processing interrupted by done signal")
+			c.logger.Debugf("processing interrupted by done signal")
 			return
 		case <-ticker.C:
 			batch := c.dequeueBatch()
 			if batch == nil || len(*batch) == 0 {
-				c.logger.Infof("processing completed")
+				c.logger.Debugf("processing completed")
 				return
 			}
 
