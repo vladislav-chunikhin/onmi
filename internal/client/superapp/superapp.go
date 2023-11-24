@@ -65,6 +65,10 @@ func NewClient(cfg *config.ClientConfig, logger logger.Logger, transport Transpo
 func (c *Client) Start(ctx context.Context) {
 	ticker := time.NewTicker(c.p)
 	defer func() {
+		if err := recover(); err != nil {
+			c.logger.Errorf("failed to process batches, panic: %v", err)
+		}
+
 		ticker.Stop()
 		c.CloseBatchCh()
 	}()
