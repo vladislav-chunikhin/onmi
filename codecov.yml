@@ -1,0 +1,7 @@
+coverage:
+  status:
+    project:
+      onmi:
+        target: 80%
+        flags:
+          - onmi
