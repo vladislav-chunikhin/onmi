@@ -39,7 +39,7 @@ func (s *TestSuperAppClientSuite) SetupSuite() {
 	s.logger = log
 }
 
-func (s *TestSuperAppClientSuite) TearDownTest() {
+func (s *TestSuperAppClientSuite) SetupTest() {
 	s.transport.ExpectedCalls = nil
 }
 
