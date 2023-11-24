@@ -309,21 +309,6 @@ func (s *TestSuperAppClientSuite) TestClient_processBatch_Nil_Batch() {
 	s.ErrorIs(err, errNilBatch)
 }
 
-func getBatches(amountOfBatches, amountOfItems int) []superapp.Batch {
-	batches := make([]superapp.Batch, 0, amountOfBatches)
-	items := make([]superapp.Item, 0, amountOfItems)
-
-	for i := 0; i < amountOfItems; i++ {
-		items = append(items, superapp.Item{})
-	}
-
-	for i := 0; i < amountOfBatches; i++ {
-		batches = append(batches, items)
-	}
-
-	return batches
-}
-
 func (s *TestSuperAppClientSuite) TestClient_Start_DoneSignal() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	amountOfBatches := 3
@@ -354,6 +339,21 @@ func (s *TestSuperAppClientSuite) TestClient_Start_DoneSignal() {
 
 	cancel()
 	client.Start(ctx)
+}
+
+func getBatches(amountOfBatches, amountOfItems int) []superapp.Batch {
+	batches := make([]superapp.Batch, 0, amountOfBatches)
+	items := make([]superapp.Item, 0, amountOfItems)
+
+	for i := 0; i < amountOfItems; i++ {
+		items = append(items, superapp.Item{})
+	}
+
+	for i := 0; i < amountOfBatches; i++ {
+		batches = append(batches, items)
+	}
+
+	return batches
 }
 
 func expectError(s *suite.Suite, expected error, actual error) {
